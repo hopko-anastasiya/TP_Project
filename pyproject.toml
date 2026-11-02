@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sipl-toolkit"
+version = "0.1.0"
+description = "Парсер, інтерпретатор, семантичні терми та візуалізація для навчальної мови SIPL"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Анастасія Гопко" }]
+license = { text = "MIT" }
+dependencies = ["lark>=1.1,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-cov>=4", "jsonschema>=4"]
+
+[project.scripts]
+sipl = "sipl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sipl = ["grammar/*.lark"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["sipl"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

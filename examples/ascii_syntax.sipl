@@ -1,0 +1,12 @@
+// ASCII-альтернативи: "or" замість ∨ та "not" замість ¬; порожні дії skip;
+// вкладені блоки begin … end та від'ємні числа.
+// input: X=-3
+// expect: A=3, Z=0
+begin
+  begin
+    skip;
+    if not (X > 0) or X = 0 then A := 0 - X else A := X
+  end;
+  Z := -1 + 1;
+  skip
+end

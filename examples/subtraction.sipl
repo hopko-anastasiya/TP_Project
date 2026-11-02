@@ -1,0 +1,11 @@
+// x - y з використанням лише віднімання одиниці (x, y > 0).
+// input: X=8, Y=2
+// expect: R=6, Y=0
+begin
+  R := X;
+  while Y > 0 do
+  begin
+    R := R - 1;
+    Y := Y - 1
+  end
+end

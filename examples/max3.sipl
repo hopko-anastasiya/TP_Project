@@ -1,0 +1,10 @@
+// Максимум трьох чисел: вкладені розгалуження та диз'юнкція умов.
+// input: A=3, B=-7, C=11
+// expect: M=11
+begin
+  if (A > B) ∨ (A = B) then
+    M := A
+  else
+    M := B;
+  if C > M then M := C else skip
+end

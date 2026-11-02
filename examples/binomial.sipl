@@ -1,0 +1,37 @@
+// Біноміальний коефіцієнт C(x, y) = x! / (y! * (x-y)!)  (x >= y > 0).
+// Ділення реалізоване відніманням у циклі.
+// input: X=5, Y=2
+// expect: R=10, FY=2, FXY=6
+begin
+  FX := 1;
+  N := X;
+  while N > 0 do
+  begin
+    FX := FX * N;
+    N := N - 1
+  end;
+
+  FY := 1;
+  N := Y;
+  while N > 0 do
+  begin
+    FY := FY * N;
+    N := N - 1
+  end;
+
+  FXY := 1;
+  N := X - Y;
+  while N > 0 do
+  begin
+    FXY := FXY * N;
+    N := N - 1
+  end;
+
+  DEN := FY * FXY;
+  R := 0;
+  while (FX > DEN) ∨ (FX = DEN) do
+  begin
+    FX := FX - DEN;
+    R := R + 1
+  end
+end

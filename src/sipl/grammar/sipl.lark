@@ -1,0 +1,88 @@
+// SIPL (SImple Programming Language) — машинозчитувана граматика для Lark (LALR(1)).
+//
+// Відповідність БНФ мови SIPL:
+//   P ::= begin S end                                              NP1
+//   S ::= x := a | S1 ; S2 | if b then S1 else S2
+//       | while b do S | begin S end | skip                       NS1–NS6
+//   a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | (a)                 NA1–NA6
+//   b ::= a1 = a2 | a1 > a2 | b1 ∨ b2 | ¬b | (b)                    NB1–NB5
+//
+// БНФ мови SIPL неоднозначна, тому пріоритети задано рівнями правил:
+//   ";" має найнижчий пріоритет і правоасоціативний (S1 ; (S2 ; S3));
+//   if/while охоплюють лише один «простий» оператор
+//   (тіло з кількох операторів береться в begin … end);
+//   "*" сильніше за "+" та "-", обидва рівні лівоасоціативні;
+//   "¬" сильніше за "∨", "∨" лівоасоціативний.
+
+start: program
+
+program: BEGIN stmt END                                          // NP1
+
+?stmt: simple_stmt
+     | seq_stmt
+seq_stmt: simple_stmt SEMI stmt                                  // NS2
+
+?simple_stmt: assign
+            | if_stmt
+            | while_stmt
+            | block
+            | skip_stmt
+assign: VAR ASSIGN aexp                                          // NS1
+if_stmt: IF bexp THEN simple_stmt ELSE simple_stmt               // NS3
+while_stmt: WHILE bexp DO simple_stmt                            // NS4
+block: BEGIN stmt END                                            // NS5
+skip_stmt: SKIP                                                  // NS6
+
+// ---- арифметичні вирази ----
+?aexp: add_expr
+?add_expr: mul_expr
+         | add_expr PLUS mul_expr        -> add                  // NA3
+         | add_expr MINUS mul_expr       -> sub                  // NA4
+?mul_expr: atom
+         | mul_expr STAR atom            -> mul                  // NA5
+?atom: NUMBER                            -> num                  // NA1
+     | VAR                               -> var                  // NA2
+     | LPAR aexp RPAR                    -> paren                // NA6
+
+// ---- умови ----
+?bexp: or_expr
+?or_expr: not_expr
+        | or_expr OR not_expr            -> or_                  // NB3
+?not_expr: NOT not_expr                  -> not_                 // NB4
+         | bprimary
+?bprimary: aexp EQ aexp                  -> eq                   // NB1
+         | aexp GT aexp                  -> gt                   // NB2
+         | LPAR bexp RPAR                -> bparen               // NB5
+
+// ---- лексика ----
+BEGIN: "begin"
+END: "end"
+IF: "if"
+THEN: "then"
+ELSE: "else"
+WHILE: "while"
+DO: "do"
+SKIP: "skip"
+OR: "∨" | "or"
+NOT: "¬" | "not"
+
+ASSIGN: ":="
+SEMI: ";"
+PLUS: "+"
+MINUS: "-" | "−" | "–"
+STAR: "*" | "∗" | "×"
+EQ: "="
+GT: ">"
+LPAR: "("
+RPAR: ")"
+
+// Число може мати знак мінус (n ::= … -1 | 0 | 1 …). Контекстний лексер LALR
+// відрізняє "Y - 1" (віднімання) від "R := -1" (від'ємне число).
+NUMBER: /-?[0-9]+/
+// Ключові слова зарезервовані: не можуть бути іменами змінних.
+VAR: /(?!(begin|end|if|then|else|while|do|skip|or|not)(?![A-Za-z0-9_]))[A-Za-z_][A-Za-z0-9_]*/
+
+COMMENT: /\/\/[^\n]*/
+%import common.WS
+%ignore WS
+%ignore COMMENT

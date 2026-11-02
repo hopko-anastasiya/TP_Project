@@ -1,0 +1,11 @@
+// Степінь x^y за допомогою +, -, * (x, y > 0).
+// input: X=5, Y=2
+// expect: R=25
+begin
+  R := 1;
+  while Y > 0 do
+  begin
+    R := R * X;
+    Y := Y - 1
+  end
+end

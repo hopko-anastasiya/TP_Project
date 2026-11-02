@@ -1,0 +1,8 @@
+// Чи ділиться x на y, використовуючи +, - (x, y > 0): D = 1 — так, D = 0 — ні.
+// input: X=9, Y=5
+// expect: D=0, X=4
+begin
+  while X > Y ∨ X = Y do
+    X := X - Y;
+  if X = 0 then D := 1 else D := 0
+end

@@ -1,0 +1,10 @@
+// НСД(x, y) алгоритмом Евкліда з відніманням (x, y > 0).
+// input: X=84, Y=36
+// expect: X=12, Y=12
+begin
+  while ¬(X = Y) do
+    if X > Y then
+      X := X - Y
+    else
+      Y := Y - X
+end
