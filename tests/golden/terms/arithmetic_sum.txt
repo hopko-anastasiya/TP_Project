@@ -1,0 +1,1 @@
+AS^S(0) · AS^K(N⇒) · WH(S2(gr, K⇒, 0), AS^S(S2(add, S2(add, S⇒, K⇒), K⇒)) · AS^K(S2(sub, K⇒, 1)))

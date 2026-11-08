@@ -1,0 +1,1 @@
+IF(S2(or, S2(gr, A⇒, B⇒), S2(eq, A⇒, B⇒)), AS^M(A⇒), AS^M(B⇒)) · IF(S2(gr, C⇒, M⇒), AS^M(C⇒), id)

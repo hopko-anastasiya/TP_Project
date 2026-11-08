@@ -1,0 +1,1 @@
+AS^R(X⇒) · WH(S2(gr, Y⇒, 0), AS^R(S2(sub, R⇒, 1)) · AS^Y(S2(sub, Y⇒, 1)))

@@ -1,0 +1,1 @@
+(id · IF(S2(or, S1(neg, S2(gr, X⇒, 0)), S2(eq, X⇒, 0)), AS^A(S2(sub, 0, X⇒)), AS^A(X⇒))) · AS^Z(S2(add, -1, 1)) · id
