@@ -158,6 +158,6 @@ def test_golden_terms(example):
     actual = build_term(parse(example.source)).render() + "\n"
     if os.environ.get("SIPL_UPDATE_GOLDEN"):
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(actual, encoding="utf-8")
+        path.write_bytes(actual.encode("utf-8"))
     assert path.exists(), f"немає golden-файлу {path.name}; запустіть із SIPL_UPDATE_GOLDEN=1"
     assert path.read_text(encoding="utf-8") == actual
