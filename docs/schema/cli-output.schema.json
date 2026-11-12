@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/sipl/cli-output.schema.json",
+  "title": "SIPL CLI JSON output (schema_version 1)",
+  "type": "object",
+  "required": ["schema_version", "tool", "version", "command", "file", "ok", "result", "diagnostics"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "tool": { "const": "sipl" },
+    "version": { "type": "string" },
+    "command": { "enum": ["check", "parse", "tree", "run", "trace", "term", "visualize"] },
+    "file": { "type": "string" },
+    "ok": { "type": "boolean" },
+    "result": { "type": ["object", "null"] },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/diagnostic" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "ok": { "const": false } } },
+      "then": { "properties": { "diagnostics": { "minItems": 1 } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "check" }, "ok": { "const": true } } },
+      "then": { "properties": { "result": {
+        "type": "object", "required": ["variables"],
+        "properties": { "variables": { "type": "array", "items": { "type": "string" } } }
+      } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "parse" }, "ok": { "const": true } } },
+      "then": { "properties": { "result": {
+        "type": "object", "required": ["ast"],
+        "properties": { "ast": { "$ref": "#/$defs/astNode" } }
+      } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "tree" }, "ok": { "const": true } } },
+      "then": { "properties": { "result": {
+        "type": "object", "required": ["parse_tree", "leaves"],
+        "properties": { "parse_tree": { "$ref": "#/$defs/parseNode" }, "leaves": { "type": "string" } }
+      } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "run" }, "ok": { "const": true } } },
+      "then": { "properties": { "result": {
+        "type": "object", "required": ["state", "steps"],
+        "properties": { "state": { "$ref": "#/$defs/state" }, "steps": { "type": "integer", "minimum": 0 } }
+      } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "trace" } }, "required": ["result"] },
+      "then": { "properties": { "result": {
+        "type": ["object", "null"],
+        "required": ["events", "state", "steps"],
+        "properties": {
+          "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+          "state": { "oneOf": [{ "$ref": "#/$defs/state" }, { "type": "null" }] },
+          "steps": { "type": "integer", "minimum": 0 }
+        }
+      } } }
+    },
+    {
+      "if": { "properties": { "command": { "const": "term" }, "ok": { "const": true } } },
+      "then": { "properties": { "result": {
+        "type": "object", "required": ["term", "term_ascii", "tree"],
+        "properties": {
+          "term": { "type": "string" },
+          "term_ascii": { "type": "string" },
+          "tree": { "$ref": "#/$defs/term" },
+          "steps": { "type": "array", "items": { "$ref": "#/$defs/ruleStep" } }
+        }
+      } } }
+    }
+  ],
+  "$defs": {
+    "span": {
+      "type": "object",
+      "required": ["line", "column", "end_line", "end_column", "start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "end_line": { "type": "integer", "minimum": 1 },
+        "end_column": { "type": "integer", "minimum": 1 },
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "optSpan": { "oneOf": [{ "$ref": "#/$defs/span" }, { "type": "null" }] },
+    "diagnostic": {
+      "type": "object",
+      "required": ["severity", "code", "message", "span"],
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["error", "warning"] },
+        "code": { "enum": ["syntax-error", "runtime-error", "undefined-variable", "step-limit", "io-error", "usage-error"] },
+        "message": { "type": "string" },
+        "span": { "$ref": "#/$defs/optSpan" }
+      }
+    },
+    "state": { "type": "object", "additionalProperties": { "type": "integer" } },
+    "astNode": {
+      "type": "object",
+      "required": ["type", "span"],
+      "properties": {
+        "type": { "enum": ["Program", "Assign", "Seq", "If", "While", "Block", "Skip", "Num", "Var", "BinOp", "Compare", "Or", "Not"] },
+        "span": { "$ref": "#/$defs/optSpan" }
+      }
+    },
+    "parseNode": {
+      "type": "object",
+      "required": ["kind", "span"],
+      "properties": {
+        "kind": { "enum": ["nonterminal", "terminal"] },
+        "symbol": { "type": "string" },
+        "rule": { "type": "string" },
+        "token": { "type": "string" },
+        "text": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/parseNode" } }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["seq", "kind"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["program_started", "before_statement", "after_statement", "variable_changed", "condition_evaluated", "program_finished"] },
+        "node": { "type": "string" },
+        "text": { "type": "string" },
+        "span": { "$ref": "#/$defs/optSpan" },
+        "state": { "$ref": "#/$defs/state" },
+        "name": { "type": "string" },
+        "old": { "type": ["integer", "null"] },
+        "new": { "type": "integer" },
+        "construct": { "enum": ["if", "while"] },
+        "value": { "type": "boolean" },
+        "steps": { "type": "integer" }
+      }
+    },
+    "term": {
+      "type": "object",
+      "required": ["type", "span"],
+      "properties": {
+        "type": { "enum": ["const", "deref", "superposition", "assign", "compose", "if", "while", "group", "id"] },
+        "span": { "$ref": "#/$defs/optSpan" }
+      }
+    },
+    "ruleStep": {
+      "type": "object",
+      "required": ["rule", "lhs", "rhs", "result", "depth", "span"],
+      "properties": {
+        "rule": { "type": "string", "pattern": "^NS_" },
+        "lhs": { "type": "string" },
+        "rhs": { "type": "string" },
+        "result": { "type": "string" },
+        "depth": { "type": "integer", "minimum": 0 },
+        "span": { "$ref": "#/$defs/optSpan" }
+      }
+    }
+  }
+}
