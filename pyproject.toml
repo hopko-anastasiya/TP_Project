@@ -9,7 +9,6 @@ description = "Парсер, інтерпретатор, семантичні т
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Анастасія Гопко" }]
-license = { text = "MIT" }
 dependencies = ["lark>=1.1,<2"]
 
 [project.optional-dependencies]
