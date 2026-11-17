@@ -14,6 +14,20 @@ def _fragment(node: VisNode, source: str | None, limit: int = 60) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+def _picture_label(node: VisNode) -> str:
+    """Підпис для DOT/SVG: лише нетермінал, без номера правила."""
+    if node.kind == "nonterminal":
+        return node.label
+    return _full_label(node)
+
+
+def _tooltip(node: VisNode, source: str | None) -> str:
+    if node.span is None:
+        return ""
+    rule = f" ({node.detail})" if node.kind == "nonterminal" and node.detail else ""
+    return f"{node.span}{rule}: {_fragment(node, source)}"
+
+
 def _full_label(node: VisNode) -> str:
     if node.kind == "terminal":
         return node.label
@@ -66,19 +80,17 @@ def render_dot(root: VisNode, source: str | None = None, name: str = "sipl") -> 
     """Graphviz DOT. Підказка (tooltip) вузла містить позицію та фрагмент коду."""
     lines = [
         f'digraph "{_dot_escape(name)}" {{',
-        '  graph [ordering=out, fontname="Helvetica"];',
-        '  node [fontname="Helvetica", fontsize=11];',
-        "  edge [arrowhead=none];",
+        '  graph [ordering=out, fontname="Helvetica", nodesep=0.25, ranksep=0.35];',
+        '  node [shape=plaintext, fontname="Helvetica", fontsize=11];',
+        "  edge [arrowhead=normal, arrowsize=0.7];",
     ]
     ids: dict[int, str] = {}
     for i, n in enumerate(root.walk()):
         ids[id(n)] = f"n{i}"
-        shape = "plaintext" if n.kind == "terminal" else "box"
-        style = ', style="rounded,filled", fillcolor="#eef3fb"' if n.kind != "terminal" else ""
-        tooltip = f"{n.span}: {_fragment(n, source)}" if n.span else ""
+        font = ', fontname="Helvetica-Bold"' if n.kind == "terminal" else ""
         lines.append(
-            f'  n{i} [label="{_dot_escape(_full_label(n))}", shape={shape}{style}, '
-            f'tooltip="{_dot_escape(tooltip)}"];'
+            f'  n{i} [label="{_dot_escape(_picture_label(n))}"{font}, '
+            f'tooltip="{_dot_escape(_tooltip(n, source))}"];'
         )
     for n in root.walk():
         for c in n.children:
@@ -91,7 +103,7 @@ def render_dot(root: VisNode, source: str | None = None, name: str = "sipl") -> 
 
 _CHAR_W = 7.4
 _NODE_H = 24
-_LEVEL_H = 56
+_LEVEL_H = 60
 _GAP = 12
 _PAD = 16
 
@@ -101,7 +113,7 @@ def _layout(root: VisNode) -> tuple[dict[int, tuple[float, float, float]], float
     widths: dict[int, float] = {}
 
     def node_w(n: VisNode) -> float:
-        return max(28.0, len(_full_label(n)) * _CHAR_W + 14)
+        return max(20.0, len(_picture_label(n)) * _CHAR_W + 10)
 
     def measure(n: VisNode) -> float:
         own = node_w(n)
@@ -137,37 +149,42 @@ def _layout(root: VisNode) -> tuple[dict[int, tuple[float, float, float]], float
 
 
 def render_svg(root: VisNode, source: str | None = None, css_class: str = "sipl-tree") -> str:
-    """Самодостатній SVG. Вузли мають data-start/data-end — зміщення у вихідному тексті."""
+    """Самодостатній SVG: нетермінали, жирні термінали, стрілки від батька до дітей.
+
+    Вузли мають data-start/data-end — зміщення у вихідному тексті; підказка показує позицію,
+    правило БНФ і фрагмент коду.
+    """
     pos, width, height = _layout(root)
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" class="{css_class}" width="{width:.0f}" '
         f'height="{height:.0f}" viewBox="0 0 {width:.0f} {height:.0f}" font-family="Helvetica, Arial, sans-serif" '
         f'font-size="12">',
+        '<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" '
+        'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d2433"/></marker></defs>',
         "<style>"
-        ".edge{stroke:#8a94a6;stroke-width:1}"
-        ".node rect{fill:#eef3fb;stroke:#4a6fa5;stroke-width:1}"
-        ".node.terminal rect{fill:#fff8e6;stroke:#c08a1e}"
-        ".node.bexp rect{fill:#f1ecfb;stroke:#7b5ea7}"
-        ".node.aexp rect{fill:#eaf6ee;stroke:#3f8f5b}"
+        ".edge{stroke:#1d2433;stroke-width:1.2}"
+        ".node rect{fill:transparent;stroke:none}"
         ".node text{fill:#1d2433;text-anchor:middle;dominant-baseline:central}"
-        ".node.selected rect{stroke:#d9480f;stroke-width:2.5}"
+        ".node.terminal text{font-weight:bold}"
+        ".node.selected rect{stroke:#d9480f;stroke-width:2}"
         "</style>",
     ]
+    gap = 4
     for n in root.walk():
         x1, y1, _ = pos[id(n)]
         for c in n.children:
             x2, y2, _ = pos[id(c)]
             out.append(
-                f'<line class="edge" x1="{x1:.1f}" y1="{y1 + _NODE_H:.1f}" x2="{x2:.1f}" y2="{y2:.1f}"/>'
+                f'<line class="edge" x1="{x1:.1f}" y1="{y1 + _NODE_H + gap:.1f}" '
+                f'x2="{x2:.1f}" y2="{y2 - gap:.1f}" marker-end="url(#arrow)"/>'
             )
     for n in root.walk():
         x, y, w = pos[id(n)]
         span_attr = f' data-start="{n.span.start}" data-end="{n.span.end}"' if n.span else ""
-        title = f"{n.span}: {_fragment(n, source)}" if n.span else ""
         out.append(
-            f'<g class="node {n.kind}"{span_attr}><title>{escape(title)}</title>'
-            f'<rect x="{x - w / 2:.1f}" y="{y:.1f}" width="{w:.1f}" height="{_NODE_H}" rx="5"/>'
-            f'<text x="{x:.1f}" y="{y + _NODE_H / 2:.1f}">{escape(_full_label(n))}</text></g>'
+            f'<g class="node {n.kind}"{span_attr}><title>{escape(_tooltip(n, source))}</title>'
+            f'<rect x="{x - w / 2:.1f}" y="{y:.1f}" width="{w:.1f}" height="{_NODE_H}" rx="4"/>'
+            f'<text x="{x:.1f}" y="{y + _NODE_H / 2:.1f}">{escape(_picture_label(n))}</text></g>'
         )
     out.append("</svg>")
     return "\n".join(out) + "\n"

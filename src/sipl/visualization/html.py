@@ -100,7 +100,7 @@ li.collapsed > ul { display: none; }
 .tabs button.on { color: var(--text); border-color: var(--accent); }
 .svgwrap { display: none; } .svgwrap svg { background: #fff; border-radius: 6px; }
 .svgwrap svg .node { cursor: pointer; }
-.svgwrap svg .node.match rect, .svgwrap svg .node.approx rect { fill: #ffe08a; }
+.svgwrap svg .node.match rect, .svgwrap svg .node.approx rect { fill: #ffe08a !important; }
 .svgwrap svg .node.selected rect { stroke: #d9480f; stroke-width: 2.5; }
 section.svg-mode .svgwrap { display: block; } section.svg-mode ul.tree { display: none; }
 #info { font: 12px ui-monospace, Consolas, monospace; color: var(--muted); padding: 6px 12px;

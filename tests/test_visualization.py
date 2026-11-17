@@ -63,8 +63,10 @@ def test_dot_output():
     dot = render_dot(from_parse_tree(parse_tree(SMALL)), SMALL)
     assert dot.startswith('digraph "sipl" {')
     assert dot.rstrip().endswith("}")
-    assert 'label="<програма> NP1"' in dot
-    assert "tooltip=\"1:12-1:19: (1 + Y)\"" in dot
+    # у підписі лише нетермінал, правило — у підказці
+    assert 'n0 [label="<програма>",' in dot
+    assert 'tooltip="1:12-1:19 (NA6): (1 + Y)"' in dot
+    assert 'label="begin", fontname="Helvetica-Bold"' in dot
     nodes = len(re.findall(r"^\s+n\d+ \[", dot, re.M))
     edges = len(re.findall(r"->", dot))
     assert edges == nodes - 1
@@ -88,6 +90,9 @@ def test_svg_is_well_formed_and_linked(example):
     for g in groups:
         start, end = int(g.get("data-start")), int(g.get("data-end"))
         assert 0 <= start < end <= len(example.source)
+    labels = [g.find(f"{ns}text").text for g in groups]
+    assert not any(" NS" in t or " NA" in t or " NB" in t for t in labels)
+    assert len(root.findall(f"{ns}line[@marker-end]")) == tree.count() - 1
 
 
 def test_svg_nodes_do_not_overlap_on_same_level():
