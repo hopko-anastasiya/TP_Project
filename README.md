@@ -1,5 +1,6 @@
 # Програмний проєкт
 ## Виконала: Анастасія Гопко, ТТП-32.
+## Відео-захист: https://drive.google.com/file/d/1X921_S1HLfd1ldns2d-4BuXGAnbsEMKB/view?usp=sharing 
 
 ## Обрані завдання
 
